@@ -4,8 +4,6 @@
 
 A lightweight Safari sidebar AI assistant. It supports configuring model providers compatible with OpenAI-style interfaces (such as OpenRouter, AIHubMix) and features web page summarization and selected text explanation.
 
-<img width="1440" height="900" alt="image" src="https://github.com/user-attachments/assets/565a2f9f-6d03-4c74-b0fb-a88c1203a9a9" />
-
 ## Demo
 
 <div align="center">
