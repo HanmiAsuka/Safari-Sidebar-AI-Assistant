@@ -4,7 +4,15 @@
 
 一个轻量级 Safari 浏览器侧边栏 AI 助手，支持配置提供 OpenAI 风格接口的模型提供商（如 Openrouter、AIHubMix），具备网页摘要和选文解释等功能。
 
-<img width="1440" height="900" alt="image" src="https://github.com/user-attachments/assets/565a2f9f-6d03-4c74-b0fb-a88c1203a9a9" />
+
+## 效果演示
+
+<div align="center">
+    
+https://github.com/user-attachments/assets/3b5f6933-34b9-40bb-8700-5993249aa278
+    
+</div>
+
 
 
 ## 特性
