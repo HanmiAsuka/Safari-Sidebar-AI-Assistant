@@ -8,12 +8,8 @@
 ## 效果演示
 
 <div align="center">
-    
-https://github.com/user-attachments/assets/3b5f6933-34b9-40bb-8700-5993249aa278
-    
+  <video src="https://github.com/user-attachments/assets/3b5f6933-34b9-40bb-8700-5993249aa278" muted autoplay loop playsinline width="80%" style="max-width: 800px;"></video>
 </div>
-
-
 
 ## 特性
 
