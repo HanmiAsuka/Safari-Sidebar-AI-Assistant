@@ -25,7 +25,7 @@ export default defineConfig({
         ],
         connect: ['openrouter.ai', 'api.openai.com', 'aihubmix.com'],
         require: [
-          'https://cdn.jsdelivr.net/npm/marked/marked.min.js',
+          'https://cdn.jsdelivr.net/npm/marked@17.0.1/lib/marked.umd.min.js',
           'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js',
         ],
         'run-at': 'document-end',
