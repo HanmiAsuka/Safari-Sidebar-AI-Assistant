@@ -6,6 +6,12 @@ A lightweight Safari sidebar AI assistant. It supports configuring model provide
 
 <img width="1440" height="900" alt="image" src="https://github.com/user-attachments/assets/565a2f9f-6d03-4c74-b0fb-a88c1203a9a9" />
 
+## Demo
+
+<div align="center">
+  <video src="https://github.com/user-attachments/assets/3b5f6933-34b9-40bb-8700-5993249aa278" muted autoplay loop playsinline width="80%" style="max-width: 800px;"></video>
+</div>
+
 ## Features
 
 - **Sidebar Design**: Non-intrusive to web browsing. Toggle visibility via the `ctrl+x` (macOS) shortcut.
