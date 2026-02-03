@@ -4,6 +4,7 @@
  */
 
 import * as Security from '../utils/security';
+import { CONFIG } from '@/config';
 
 /** 内容哈希结构 */
 interface ContentHash {
@@ -27,15 +28,6 @@ interface PageContentCache {
 export class PageContentManager {
   private cache: PageContentCache | null = null;
 
-  /** 内容变化阈值（20%） */
-  private readonly CHANGE_THRESHOLD = 0.2;
-
-  /** 采样间隔 */
-  private readonly SAMPLE_INTERVAL = 100;
-
-  /** 采样数量 */
-  private readonly SAMPLE_COUNT = 10;
-
   /**
    * 获取当前页面内容
    * @param maxLength - 最大内容长度
@@ -51,9 +43,9 @@ export class PageContentManager {
    */
   private calculateHash(content: string): ContentHash {
     const samples: string[] = [];
-    const interval = Math.floor(content.length / this.SAMPLE_COUNT) || 1;
+    const interval = Math.floor(content.length / CONFIG.CONTENT.SAMPLE_COUNT) || 1;
 
-    for (let i = 0; i < this.SAMPLE_COUNT && i * interval < content.length; i++) {
+    for (let i = 0; i < CONFIG.CONTENT.SAMPLE_COUNT && i * interval < content.length; i++) {
       const pos = i * interval;
       samples.push(content.charAt(pos));
     }
@@ -73,7 +65,7 @@ export class PageContentManager {
   private hasSignificantChange(oldHash: ContentHash, newHash: ContentHash): boolean {
     // 长度变化超过阈值
     const lengthChange = Math.abs(newHash.length - oldHash.length) / Math.max(oldHash.length, 1);
-    if (lengthChange > this.CHANGE_THRESHOLD) {
+    if (lengthChange > CONFIG.CONTENT.CHANGE_THRESHOLD) {
       return true;
     }
 
@@ -87,7 +79,7 @@ export class PageContentManager {
     }
 
     const sampleChange = differentCount / Math.max(minLen, 1);
-    return sampleChange > this.CHANGE_THRESHOLD;
+    return sampleChange > CONFIG.CONTENT.CHANGE_THRESHOLD;
   }
 
   /**

@@ -148,6 +148,8 @@ export interface I18NText {
   addProvider: string;
   /** 删除提供方 */
   deleteProvider: string;
+  /** 保存提供方 */
+  saveProvider: string;
   /** 无提供方 */
   noProviders: string;
   /** 默认提供方名称 */
@@ -158,6 +160,14 @@ export interface I18NText {
     openai: string;
     aihubmix: string;
     custom: string;
+  };
+  /** 默认模型 */
+  defaultModel: string;
+  /** 提供方验证提示 */
+  providerValidation: {
+    nameRequired: string;
+    apiKeyRequired: string;
+    defaultModelRequired: string;
   };
 
   // ========== 摘要功能 ==========

@@ -9,7 +9,7 @@ export const modelsPanelStyles = `
     background: var(--bg-color);
     position: absolute;
     inset: 0;
-    z-index: 11;
+    z-index: 20;
     overflow: hidden;
     animation: slideIn 0.2s ease-out;
     flex-direction: column;

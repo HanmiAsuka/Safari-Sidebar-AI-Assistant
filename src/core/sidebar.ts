@@ -57,6 +57,7 @@ export class AISidebar implements SettingsViewHost, ModelsViewHost, ChatViewHost
   private _settings: Settings;
   private _providers: ProviderConfig[] = [];
   private _modelsCache: Record<string, string[]> = {};
+  private _unsavedProviders: Set<string> = new Set(); // 跟踪未保存的提供方
   private isXPressed = false;
 
   // DOM 缓存
@@ -262,12 +263,13 @@ export class AISidebar implements SettingsViewHost, ModelsViewHost, ChatViewHost
   // ============================================
 
   /**
-   * 添加提供方
+   * 添加提供方（草稿状态，不自动保存）
    */
   addProvider(provider: ProviderConfig): void {
     this._providers.push(provider);
     this._modelsCache[provider.id] = [];
-    this.saveProviders();
+    // 标记为未保存
+    this._unsavedProviders.add(provider.id);
   }
 
   /**
@@ -277,7 +279,10 @@ export class AISidebar implements SettingsViewHost, ModelsViewHost, ChatViewHost
     const index = this._providers.findIndex(p => p.id === provider.id);
     if (index >= 0) {
       this._providers[index] = provider;
-      this.saveProviders();
+      // 只有已保存的提供方才持久化更新
+      if (!this._unsavedProviders.has(provider.id)) {
+        this.saveProviders();
+      }
     }
   }
 
@@ -290,6 +295,7 @@ export class AISidebar implements SettingsViewHost, ModelsViewHost, ChatViewHost
 
     this._providers = this._providers.filter(p => p.id !== providerId);
     delete this._modelsCache[providerId];
+    this._unsavedProviders.delete(providerId);
 
     // 如果删除的是当前选中的提供方，切换到默认
     if (this._settings.chatProviderId === providerId) {
@@ -301,6 +307,21 @@ export class AISidebar implements SettingsViewHost, ModelsViewHost, ChatViewHost
 
     this.saveProviders();
     this.saveSettings({});
+  }
+
+  /**
+   * 检查提供方是否已保存（非草稿）
+   */
+  isProviderSaved(providerId: string): boolean {
+    return !this._unsavedProviders.has(providerId);
+  }
+
+  /**
+   * 标记提供方为已保存
+   */
+  markProviderAsSaved(providerId: string): void {
+    this._unsavedProviders.delete(providerId);
+    this.saveProviders();
   }
 
   // ============================================
@@ -343,6 +364,26 @@ export class AISidebar implements SettingsViewHost, ModelsViewHost, ChatViewHost
   clearModelsForProvider(providerId: string): void {
     this._modelsCache[providerId] = [];
     this.saveModelsForProvider(providerId);
+  }
+
+  /**
+   * 刷新提供方视图（模型列表变化后调用）
+   * 如果提供方还没有设置默认模型，自动设置第一个模型为默认
+   */
+  refreshProvidersView(providerId: string): void {
+    const provider = this._providers.find(p => p.id === providerId);
+    const models = this._modelsCache[providerId] || [];
+
+    // 如果提供方没有设置默认模型且有可用模型，自动设置第一个为默认
+    if (provider && !provider.defaultModel && models.length > 0) {
+      provider.defaultModel = models[0];
+      this.saveProviders();
+    }
+
+    // 刷新提供方视图
+    if (this.providersView.isVisible) {
+      this.providersView.renderList();
+    }
   }
 
   // ============================================
@@ -589,10 +630,12 @@ export class AISidebar implements SettingsViewHost, ModelsViewHost, ChatViewHost
         themeSelector.classList.remove('open');
       }
 
-      // 关闭所有打开的选择器
+      // 关闭所有打开的选择器（包括更新箭头）
       this._shadow.querySelectorAll('.sa-selector-wrapper.open').forEach((wrapper) => {
         if (!wrapper.contains(e.target as Node)) {
           wrapper.classList.remove('open');
+          const arrow = wrapper.querySelector('.sa-selector-arrow');
+          if (arrow) arrow.textContent = '◀';
         }
       });
 

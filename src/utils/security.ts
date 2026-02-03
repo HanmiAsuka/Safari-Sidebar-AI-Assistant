@@ -4,49 +4,11 @@
  */
 
 import { IS_ZH } from '@/i18n';
+import { CONFIG } from '@/config';
 import type { ProviderType } from '@/types';
-
-/** 加密密钥存储键名 */
-const ENCRYPTION_KEY_STORAGE = 'sa_encryption_key';
 
 /** 缓存的加密密钥 */
 let cachedEncryptionKey: CryptoKey | null = null;
-
-/** 允许的 API 域名白名单（用于标准提供方） */
-const ALLOWED_HOSTS = ['openrouter.ai', 'api.openai.com', 'aihubmix.com'];
-
-/** 禁止的 API 域名黑名单（用于自定义提供方） */
-const BLOCKED_HOSTS = [
-  'localhost',
-  '127.0.0.1',
-  '0.0.0.0',
-  // 内网地址段（简化检测）
-  '192.168.',
-  '10.',
-  '172.16.',
-  '172.17.',
-  '172.18.',
-  '172.19.',
-  '172.20.',
-  '172.21.',
-  '172.22.',
-  '172.23.',
-  '172.24.',
-  '172.25.',
-  '172.26.',
-  '172.27.',
-  '172.28.',
-  '172.29.',
-  '172.30.',
-  '172.31.'
-];
-
-/** 敏感 URL 参数列表 */
-const SENSITIVE_PARAMS = [
-  'token', 'key', 'api_key', 'apikey', 'secret',
-  'password', 'pass', 'pwd', 'session', 'sessionid',
-  'auth', 'access_token', 'refresh_token', 'code', 'state', 'nonce'
-];
 
 /**
  * 生成或获取加密密钥
@@ -58,7 +20,7 @@ async function getEncryptionKey(): Promise<CryptoKey> {
   }
 
   // 尝试从 localStorage 获取已存储的密钥
-  const storedKey = localStorage.getItem(ENCRYPTION_KEY_STORAGE);
+  const storedKey = localStorage.getItem(CONFIG.SECURITY.ENCRYPTION_KEY_STORAGE);
   if (storedKey) {
     const keyData = JSON.parse(storedKey);
     cachedEncryptionKey = await crypto.subtle.importKey(
@@ -80,7 +42,7 @@ async function getEncryptionKey(): Promise<CryptoKey> {
 
   // 导出并存储密钥
   const exportedKey = await crypto.subtle.exportKey('jwk', cachedEncryptionKey);
-  localStorage.setItem(ENCRYPTION_KEY_STORAGE, JSON.stringify(exportedKey));
+  localStorage.setItem(CONFIG.SECURITY.ENCRYPTION_KEY_STORAGE, JSON.stringify(exportedKey));
 
   return cachedEncryptionKey;
 }
@@ -131,15 +93,15 @@ export async function obfuscateApiKey(plainKey: string): Promise<string> {
 /**
  * API Key 解密（异步）
  * @param encryptedKey - 加密后的 Key
- * @returns 明文 API Key
+ * @returns 明文 API Key，解密失败返回空字符串
  */
 export async function deobfuscateApiKey(encryptedKey: string): Promise<string> {
   if (!encryptedKey || typeof encryptedKey !== 'string') return '';
 
   // 必须是 ENC 格式
   if (!encryptedKey.startsWith('ENC:')) {
-    console.warn('Invalid key format, expected ENC:');
-    return '';
+    // 可能是旧版未加密的 key，直接返回（向后兼容）
+    return encryptedKey;
   }
 
   const key = await getEncryptionKey();
@@ -166,7 +128,9 @@ export async function deobfuscateApiKey(encryptedKey: string): Promise<string> {
     const decoder = new TextDecoder();
     return decoder.decode(decrypted);
   } catch (error) {
-    console.error('Decryption failed:', error);
+    // 解密失败通常意味着密钥已更换（用户清除了浏览器数据）
+    // 静默返回空字符串，让用户重新输入 API Key
+    console.warn('API Key decryption failed - encryption key may have changed. Please re-enter your API Key.');
     return '';
   }
 }
@@ -190,7 +154,7 @@ export function isValidApiUrl(url: string, providerType?: ProviderType): boolean
     // 自定义提供方：使用黑名单模式
     if (providerType === 'custom') {
       // 检查是否为内网地址
-      for (const blocked of BLOCKED_HOSTS) {
+      for (const blocked of CONFIG.SECURITY.BLOCKED_HOSTS) {
         if (hostname === blocked || hostname.startsWith(blocked)) {
           return false;
         }
@@ -203,7 +167,7 @@ export function isValidApiUrl(url: string, providerType?: ProviderType): boolean
     }
 
     // 标准提供方：严格的域名白名单
-    return ALLOWED_HOSTS.includes(hostname);
+    return CONFIG.SECURITY.ALLOWED_HOSTS.includes(hostname);
   } catch {
     return false;
   }
@@ -370,7 +334,7 @@ export function sanitizeUrl(url: string): string {
     const parsed = new URL(url);
 
     // 清理查询参数
-    SENSITIVE_PARAMS.forEach(param => {
+    CONFIG.SECURITY.SENSITIVE_PARAMS.forEach(param => {
       if (parsed.searchParams.has(param)) {
         parsed.searchParams.set(param, '[REDACTED]');
       }
@@ -378,7 +342,7 @@ export function sanitizeUrl(url: string): string {
 
     // 清理 hash 中的敏感信息
     if (parsed.hash) {
-      SENSITIVE_PARAMS.forEach(param => {
+      CONFIG.SECURITY.SENSITIVE_PARAMS.forEach(param => {
         const regex = new RegExp(`(${param}=)[^&]*`, 'gi');
         parsed.hash = parsed.hash.replace(regex, '$1[REDACTED]');
       });

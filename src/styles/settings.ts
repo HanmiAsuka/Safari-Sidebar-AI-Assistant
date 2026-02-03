@@ -518,6 +518,47 @@ export const providersPanelStyles = `
     border-color: var(--accent-color);
   }
 
+  /* 验证错误状态 */
+  .sa-provider-field-input.error,
+  .sa-selector-display.error {
+    border-color: var(--danger-color) !important;
+    animation: shake 0.3s ease-out;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+  }
+
+  /* 保存按钮样式 */
+  .sa-provider-card-save {
+    padding: 6px 12px;
+    background: var(--success-color);
+    border: none;
+    color: white;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .sa-provider-card-save:hover {
+    filter: brightness(1.1);
+  }
+
+  /* 提供方卡片操作按钮组 */
+  .sa-provider-card-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  /* 未保存的提供方卡片样式 */
+  .sa-provider-card.unsaved {
+    border-style: dashed;
+    border-color: var(--accent-color);
+  }
+
   .sa-add-provider-btn {
     width: 100%;
     padding: 14px;

@@ -110,6 +110,7 @@ export const zh: I18NText = {
   providerType: '类型',
   addProvider: '添加提供方',
   deleteProvider: '删除',
+  saveProvider: '保存',
   noProviders: '尚未添加任何提供方',
   defaultProviderName: 'OpenRouter',
   providerTypes: {
@@ -117,6 +118,12 @@ export const zh: I18NText = {
     openai: 'OpenAI',
     aihubmix: 'AIHubMix',
     custom: '自定义'
+  },
+  defaultModel: '默认模型',
+  providerValidation: {
+    nameRequired: '请输入提供方名称',
+    apiKeyRequired: '请输入 API Key',
+    defaultModelRequired: '请选择默认模型'
   },
 
   // 摘要功能

@@ -19,6 +19,8 @@ export interface ProviderConfig {
   apiUrl: string;
   /** 模型列表 API 地址 */
   modelsApiUrl: string;
+  /** 默认模型 ID（切换提供方时自动选择的模型） */
+  defaultModel?: string;
 }
 
 /** 用户设置配置 */
@@ -101,6 +103,24 @@ export interface AppConfig {
   SCROLL_BOTTOM_THRESHOLD: number;
   /** Chip 预览文本最大长度 */
   CHIP_PREVIEW_LENGTH: number;
+  /** 安全相关配置 */
+  SECURITY: {
+    /** 允许的 API 域名白名单 */
+    ALLOWED_HOSTS: string[];
+    /** 禁止的 API 域名黑名单 */
+    BLOCKED_HOSTS: string[];
+    /** 敏感 URL 参数列表 */
+    SENSITIVE_PARAMS: string[];
+    /** 加密密钥存储键名 */
+    ENCRYPTION_KEY_STORAGE: string;
+  };
+  /** 内容管理相关配置 */
+  CONTENT: {
+    /** 内容变化阈值 */
+    CHANGE_THRESHOLD: number;
+    /** 采样数量 */
+    SAMPLE_COUNT: number;
+  };
 }
 
 /** 模型信息 */

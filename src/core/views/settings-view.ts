@@ -116,13 +116,6 @@ export class SettingsView extends BaseView {
       this.host.openProvidersPanel();
     };
 
-    // 对话模型管理按钮
-    this.host.shadow.getElementById('sa-chat-model-manage-btn')!.onclick = (e) => {
-      e.stopPropagation();
-      const providerId = this.chatProviderDisplay.dataset.providerId || '';
-      this.host.openModelsPanel(providerId);
-    };
-
     // 重置对话提示词按钮
     this.host.shadow.getElementById('sa-reset-chat-prompt')!.onclick = (e) => {
       e.stopPropagation();
@@ -153,7 +146,7 @@ export class SettingsView extends BaseView {
     // 主题选择器
     this.themeDisplay.onclick = (e) => {
       e.stopPropagation();
-      toggleSelectorOpen(this.themeSelector);
+      toggleSelectorOpen(this.themeSelector, '.sa-selector-arrow', this.host.shadow);
       this.renderThemeDropdown();
     };
 
@@ -170,14 +163,14 @@ export class SettingsView extends BaseView {
     // 对话提供方选择器
     this.chatProviderDisplay.onclick = (e) => {
       e.stopPropagation();
-      toggleSelectorOpen(this.chatProviderSelector);
+      toggleSelectorOpen(this.chatProviderSelector, '.sa-selector-arrow', this.host.shadow);
       this.renderProviderDropdown(this.chatProviderDropdown, this.chatProviderDisplay, 'chat');
     };
 
     // 对话模型选择器
     this.chatModelDisplay.onclick = (e) => {
       e.stopPropagation();
-      toggleSelectorOpen(this.chatModelSelector);
+      toggleSelectorOpen(this.chatModelSelector, '.sa-selector-arrow', this.host.shadow);
       this.renderModelDropdown(this.chatModelDropdown, this.chatModelDisplay, 'chat');
     };
 
@@ -191,14 +184,14 @@ export class SettingsView extends BaseView {
     // 摘要提供方选择器
     this.summaryProviderDisplay.onclick = (e) => {
       e.stopPropagation();
-      toggleSelectorOpen(this.summaryProviderSelector);
+      toggleSelectorOpen(this.summaryProviderSelector, '.sa-selector-arrow', this.host.shadow);
       this.renderProviderDropdown(this.summaryProviderDropdown, this.summaryProviderDisplay, 'summary');
     };
 
     // 摘要模型选择器
     this.summaryModelDisplay.onclick = (e) => {
       e.stopPropagation();
-      toggleSelectorOpen(this.summaryModelSelector);
+      toggleSelectorOpen(this.summaryModelSelector, '.sa-selector-arrow', this.host.shadow);
       this.renderModelDropdown(this.summaryModelDropdown, this.summaryModelDisplay, 'summary');
     };
   }
@@ -248,16 +241,19 @@ export class SettingsView extends BaseView {
         display.textContent = provider?.name || T.defaultProviderName;
         display.dataset.providerId = providerId;
 
-        // 关闭下拉
+        // 关闭下拉并自动选择默认模型
         if (type === 'chat') {
           closeSelectorDropdown(this.chatProviderSelector);
-          // 重置对应的模型选择器
-          this.chatModelDisplay.textContent = '';
-          this.chatModelDisplay.dataset.model = '';
+          // 自动选择该提供方的默认模型
+          const defaultModel = provider?.defaultModel || '';
+          this.chatModelDisplay.textContent = defaultModel || T.clickManageToAdd;
+          this.chatModelDisplay.dataset.model = defaultModel;
         } else {
           closeSelectorDropdown(this.summaryProviderSelector);
-          this.summaryModelDisplay.textContent = '';
-          this.summaryModelDisplay.dataset.model = '';
+          // 自动选择该提供方的默认模型
+          const defaultModel = provider?.defaultModel || '';
+          this.summaryModelDisplay.textContent = defaultModel || T.clickManageToAdd;
+          this.summaryModelDisplay.dataset.model = defaultModel;
         }
         this.triggerSave();
       };

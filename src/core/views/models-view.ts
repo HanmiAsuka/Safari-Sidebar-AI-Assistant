@@ -24,6 +24,8 @@ export interface ModelsViewHost extends ViewHost {
   removeModelFromProvider(providerId: string, modelId: string): void;
   /** 清空指定提供方的所有模型 */
   clearModelsForProvider(providerId: string): void;
+  /** 模型列表变化后刷新提供方视图 */
+  refreshProvidersView(providerId: string): void;
 }
 
 /**
@@ -253,5 +255,16 @@ export class ModelsView extends BaseView {
    */
   getAvailableModels(): ModelInfo[] {
     return this.availableModels;
+  }
+
+  /**
+   * 隐藏视图并刷新提供方视图
+   */
+  override hide(): void {
+    super.hide();
+    // 关闭时通知宿主刷新提供方视图
+    if (this.currentProviderId) {
+      this.host.refreshProvidersView(this.currentProviderId);
+    }
   }
 }

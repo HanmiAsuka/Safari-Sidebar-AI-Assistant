@@ -7,6 +7,8 @@ import type { ProviderConfig, ProviderType } from '@/types';
 import { T } from '@/i18n';
 import { CONFIG, getDefaultProvider } from '@/config';
 import * as Security from '../../utils/security';
+import * as Icons from '../../ui/icons';
+import { closeAllDropdowns } from '../../utils/dom';
 import { BaseView, ViewHost } from '@/core';
 
 /**
@@ -15,7 +17,7 @@ import { BaseView, ViewHost } from '@/core';
 export interface ProvidersViewHost extends ViewHost {
   /** 获取所有提供方 */
   readonly providers: ProviderConfig[];
-  /** 添加提供方 */
+  /** 添加提供方（草稿状态） */
   addProvider(provider: ProviderConfig): void;
   /** 更新提供方 */
   updateProvider(provider: ProviderConfig): void;
@@ -23,6 +25,14 @@ export interface ProvidersViewHost extends ViewHost {
   deleteProvider(providerId: string): void;
   /** 保存提供方列表 */
   saveProviders(): Promise<void>;
+  /** 打开模型管理面板 */
+  openModelsPanel(providerId: string): void;
+  /** 获取指定提供方的模型列表 */
+  getModelsForProvider(providerId: string): string[];
+  /** 检查提供方是否已保存（非草稿） */
+  isProviderSaved(providerId: string): boolean;
+  /** 标记提供方为已保存 */
+  markProviderAsSaved(providerId: string): void;
 }
 
 /**
@@ -124,12 +134,21 @@ export class ProvidersView extends BaseView {
    */
   private renderProviderCard(provider: ProviderConfig): string {
     const isDefault = provider.id === getDefaultProvider().id;
+    const models = this.host.getModelsForProvider(provider.id);
+    const defaultModel = provider.defaultModel || '';
+    const isSaved = this.host.isProviderSaved(provider.id);
 
     return `
-      <div class="sa-provider-card" data-provider-id="${provider.id}">
+      <div class="sa-provider-card ${!isSaved ? 'unsaved' : ''}" data-provider-id="${provider.id}">
         <div class="sa-provider-card-header">
           <span class="sa-provider-card-title">${Security.escapeHtml(provider.name || T.defaultProviderName)}</span>
-          ${!isDefault ? `<button class="sa-provider-card-delete" data-action="delete">${T.deleteProvider}</button>` : ''}
+          <div class="sa-provider-card-actions">
+            ${!isSaved
+              ? `<button class="sa-provider-card-save" data-action="save">${T.saveProvider}</button>`
+              : ''
+            }
+            ${!isDefault ? `<button class="sa-provider-card-delete" data-action="delete">${T.deleteProvider}</button>` : ''}
+          </div>
         </div>
 
         <div class="sa-provider-field">
@@ -165,6 +184,23 @@ export class ProvidersView extends BaseView {
           <label class="sa-provider-field-label">${T.modelListUrl}</label>
           <input type="text" class="sa-provider-field-input" data-field="modelsApiUrl" value="${Security.escapeHtml(provider.modelsApiUrl)}" placeholder="${CONFIG.DEFAULT_MODELS_API_URL}">
         </div>
+
+        <div class="sa-provider-field">
+          <label class="sa-provider-field-label">${T.defaultModel}</label>
+          <div class="sa-input-with-btn">
+            <div class="sa-selector-wrapper" data-field-wrapper="defaultModel">
+              <button type="button" class="sa-selector-display" data-field="defaultModel-display">${Security.escapeHtml(defaultModel) || T.clickManageToAdd}</button>
+              <span class="sa-selector-arrow">◀</span>
+              <div class="sa-selector-dropdown" data-field="defaultModel-dropdown">
+                ${models.length > 0
+                  ? models.map(m => `<div class="sa-selector-item ${m === defaultModel ? 'selected' : ''}" data-value="${Security.escapeHtml(m)}">${Security.escapeHtml(m)}</div>`).join('')
+                  : `<div class="sa-model-dropdown-empty">${T.clickManageToAdd}</div>`
+                }
+              </div>
+            </div>
+            <button type="button" class="sa-manage-btn" data-action="manage-models">${Icons.settingsSmallIcon} ${T.manage}</button>
+          </div>
+        </div>
       </div>
     `;
   }
@@ -178,6 +214,15 @@ export class ProvidersView extends BaseView {
     cards.forEach((card) => {
       const providerId = card.getAttribute('data-provider-id');
       if (!providerId) return;
+
+      // 保存按钮
+      const saveBtn = card.querySelector('button[data-action="save"]');
+      if (saveBtn) {
+        (saveBtn as HTMLElement).onclick = (e) => {
+          e.stopPropagation();
+          this.validateAndSaveProvider(providerId, card as HTMLElement);
+        };
+      }
 
       // 删除按钮
       const deleteBtn = card.querySelector('button[data-action="delete"]');
@@ -199,6 +244,8 @@ export class ProvidersView extends BaseView {
 
         typeDisplay.onclick = (e) => {
           e.stopPropagation();
+          // 先关闭其他所有下拉框
+          closeAllDropdowns(this.host.shadow, typeWrapper);
           const isOpen = typeWrapper.classList.toggle('open');
           typeWrapper.querySelector('.sa-selector-arrow')!.textContent = isOpen ? '▼' : '◀';
         };
@@ -266,6 +313,47 @@ export class ProvidersView extends BaseView {
           };
         }
       });
+
+      // 默认模型选择器
+      const defaultModelWrapper = card.querySelector('[data-field-wrapper="defaultModel"]') as HTMLElement;
+      if (defaultModelWrapper) {
+        const defaultModelDisplay = defaultModelWrapper.querySelector('[data-field="defaultModel-display"]') as HTMLElement;
+        const defaultModelDropdown = defaultModelWrapper.querySelector('[data-field="defaultModel-dropdown"]') as HTMLElement;
+
+        defaultModelDisplay.onclick = (e) => {
+          e.stopPropagation();
+          // 先关闭其他所有下拉框
+          closeAllDropdowns(this.host.shadow, defaultModelWrapper);
+          const isOpen = defaultModelWrapper.classList.toggle('open');
+          defaultModelWrapper.querySelector('.sa-selector-arrow')!.textContent = isOpen ? '▼' : '◀';
+        };
+
+        defaultModelDropdown.querySelectorAll('.sa-selector-item').forEach((item) => {
+          (item as HTMLElement).onclick = (e) => {
+            e.stopPropagation();
+            const value = (item as HTMLElement).dataset.value!;
+            defaultModelDisplay.textContent = value;
+            defaultModelWrapper.classList.remove('open');
+            defaultModelWrapper.querySelector('.sa-selector-arrow')!.textContent = '◀';
+
+            // 更新选中状态
+            defaultModelDropdown.querySelectorAll('.sa-selector-item').forEach(i => i.classList.remove('selected'));
+            item.classList.add('selected');
+
+            // 更新提供方默认模型
+            this.updateProviderField(providerId, 'defaultModel', value);
+          };
+        });
+      }
+
+      // 模型管理按钮
+      const manageModelsBtn = card.querySelector('button[data-action="manage-models"]');
+      if (manageModelsBtn) {
+        (manageModelsBtn as HTMLElement).onclick = (e) => {
+          e.stopPropagation();
+          this.host.openModelsPanel(providerId);
+        };
+      }
     });
 
     // 点击外部关闭下拉框
@@ -352,5 +440,47 @@ export class ProvidersView extends BaseView {
    */
   getProvider(providerId: string): ProviderConfig | undefined {
     return this.host.providers.find(p => p.id === providerId);
+  }
+
+  /**
+   * 验证并保存提供方
+   */
+  private validateAndSaveProvider(providerId: string, card: HTMLElement): void {
+    const provider = this.host.providers.find(p => p.id === providerId);
+    if (!provider) return;
+
+    // 清除之前的错误状态
+    card.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
+
+    let hasError = false;
+
+    // 验证名称
+    const nameInput = card.querySelector('input[data-field="name"]') as HTMLInputElement;
+    if (!provider.name?.trim()) {
+      nameInput?.classList.add('error');
+      hasError = true;
+    }
+
+    // 验证 API Key
+    const apiKeyInput = card.querySelector('input[data-field="apiKey"]') as HTMLInputElement;
+    if (!provider.apiKey) {
+      apiKeyInput?.classList.add('error');
+      hasError = true;
+    }
+
+    // 验证默认模型
+    const defaultModelDisplay = card.querySelector('[data-field="defaultModel-display"]') as HTMLElement;
+    if (!provider.defaultModel) {
+      defaultModelDisplay?.classList.add('error');
+      hasError = true;
+    }
+
+    if (hasError) {
+      return;
+    }
+
+    // 验证通过，标记为已保存并重新渲染
+    this.host.markProviderAsSaved(providerId);
+    this.renderList();
   }
 }

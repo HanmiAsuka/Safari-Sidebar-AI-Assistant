@@ -4,15 +4,37 @@
  */
 
 /**
+ * 关闭指定根元素下所有打开的下拉选择器
+ * @param root - 根元素（如 shadow root）
+ * @param except - 可选，排除的元素（不关闭该元素）
+ */
+export function closeAllDropdowns(root: Document | ShadowRoot | HTMLElement, except?: HTMLElement | null): void {
+  root.querySelectorAll('.sa-selector-wrapper.open').forEach((wrapper) => {
+    if (wrapper !== except) {
+      wrapper.classList.remove('open');
+      const arrow = wrapper.querySelector('.sa-selector-arrow');
+      if (arrow) arrow.textContent = '◀';
+    }
+  });
+}
+
+/**
  * 切换下拉选择器的展开状态
  * @param selector - 选择器容器元素
  * @param arrowSelector - 箭头元素的 CSS 选择器
+ * @param root - 可选，用于关闭其他下拉框的根元素
  * @returns 切换后是否为展开状态
  */
 export function toggleSelectorOpen(
   selector: HTMLElement,
-  arrowSelector: string = '.sa-selector-arrow'
+  arrowSelector: string = '.sa-selector-arrow',
+  root?: Document | ShadowRoot | HTMLElement
 ): boolean {
+  // 如果提供了 root，先关闭其他所有下拉框
+  if (root) {
+    closeAllDropdowns(root, selector);
+  }
+
   const isOpen = selector.classList.toggle('open');
   const arrow = selector.querySelector(arrowSelector);
   if (arrow) {

@@ -16,9 +16,9 @@ export const CONFIG: AppConfig = {
   /** 默认摘要模型 */
   DEFAULT_SUMMARY_MODEL: 'google/gemini-2.0-flash-exp:free',
   /** 默认对话温度 */
-  DEFAULT_CHAT_TEMP: 0.6,
+  DEFAULT_CHAT_TEMP: 0.7,
   /** 默认摘要温度 */
-  DEFAULT_SUMMARY_TEMP: 0.3,
+  DEFAULT_SUMMARY_TEMP: 0.7,
   /** 侧边栏宽度 */
   SIDEBAR_WIDTH: '450px',
   /** 设置存储键名 */
@@ -48,7 +48,51 @@ export const CONFIG: AppConfig = {
   /** 滚动到底部阈值（像素） */
   SCROLL_BOTTOM_THRESHOLD: 150,
   /** Chip 预览文本最大长度 */
-  CHIP_PREVIEW_LENGTH: 600
+  CHIP_PREVIEW_LENGTH: 600,
+  /** 安全相关配置 */
+  SECURITY: {
+    /** 允许的 API 域名白名单 */
+    ALLOWED_HOSTS: ['openrouter.ai', 'api.openai.com', 'aihubmix.com'],
+    /** 禁止的 API 域名黑名单 */
+    BLOCKED_HOSTS: [
+      'localhost',
+      '127.0.0.1',
+      '0.0.0.0',
+      '192.168.',
+      '10.',
+      '172.16.',
+      '172.17.',
+      '172.18.',
+      '172.19.',
+      '172.20.',
+      '172.21.',
+      '172.22.',
+      '172.23.',
+      '172.24.',
+      '172.25.',
+      '172.26.',
+      '172.27.',
+      '172.28.',
+      '172.29.',
+      '172.30.',
+      '172.31.'
+    ],
+    /** 敏感 URL 参数列表 */
+    SENSITIVE_PARAMS: [
+      'token', 'key', 'api_key', 'apikey', 'secret',
+      'password', 'pass', 'pwd', 'session', 'sessionid',
+      'auth', 'access_token', 'refresh_token', 'code', 'state', 'nonce'
+    ],
+    /** 加密密钥存储键名 */
+    ENCRYPTION_KEY_STORAGE: 'sa_encryption_key'
+  },
+  /** 内容管理相关配置 */
+  CONTENT: {
+    /** 内容变化阈值 */
+    CHANGE_THRESHOLD: 0.2,
+    /** 采样数量 */
+    SAMPLE_COUNT: 10
+  }
 };
 
 /** 默认提供方 ID */
@@ -65,7 +109,8 @@ export function getDefaultProvider(): ProviderConfig {
     type: 'openrouter',
     apiKey: '',
     apiUrl: CONFIG.DEFAULT_API_URL,
-    modelsApiUrl: CONFIG.DEFAULT_MODELS_API_URL
+    modelsApiUrl: CONFIG.DEFAULT_MODELS_API_URL,
+    defaultModel: 'openrouter/auto'
   };
 }
 

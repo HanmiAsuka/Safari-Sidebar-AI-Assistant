@@ -170,13 +170,10 @@ function getSettingsPanelTemplate(): string {
         </div>
         <div class="sa-form-group">
           <label class="sa-form-label">${T.labels.model}</label>
-          <div class="sa-input-with-btn">
-            <div class="sa-selector-wrapper" id="sa-chat-model-selector">
-              <button type="button" class="sa-selector-display" id="set-chat-model-display">${CONFIG.DEFAULT_MODEL}</button>
-              <span class="sa-selector-arrow">◀</span>
-              <div class="sa-selector-dropdown" id="sa-chat-model-dropdown"></div>
-            </div>
-            <button type="button" class="sa-manage-btn" id="sa-chat-model-manage-btn">${Icons.settingsSmallIcon} ${T.manage}</button>
+          <div class="sa-selector-wrapper" id="sa-chat-model-selector">
+            <button type="button" class="sa-selector-display" id="set-chat-model-display">${CONFIG.DEFAULT_MODEL}</button>
+            <span class="sa-selector-arrow">◀</span>
+            <div class="sa-selector-dropdown" id="sa-chat-model-dropdown"></div>
           </div>
         </div>
         <div class="sa-form-group">

@@ -110,6 +110,7 @@ Note: For code repositories (like GitHub), only describe project name, brief des
   providerType: 'Type',
   addProvider: 'Add Provider',
   deleteProvider: 'Delete',
+  saveProvider: 'Save',
   noProviders: 'No providers added yet',
   defaultProviderName: 'OpenRouter',
   providerTypes: {
@@ -117,6 +118,12 @@ Note: For code repositories (like GitHub), only describe project name, brief des
     openai: 'OpenAI',
     aihubmix: 'AIHubMix',
     custom: 'Custom'
+  },
+  defaultModel: 'Default Model',
+  providerValidation: {
+    nameRequired: 'Please enter provider name',
+    apiKeyRequired: 'Please enter API Key',
+    defaultModelRequired: 'Please select a default model'
   },
 
   // Summary feature
