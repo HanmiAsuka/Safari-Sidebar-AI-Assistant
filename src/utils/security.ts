@@ -374,3 +374,74 @@ export function getSafeReferer(): string {
     ? window.location.origin
     : sanitizeUrl(window.location.href);
 }
+
+// ============================================
+// 提供方验证相关
+// ============================================
+
+/** 提供方验证结果 */
+export interface ProviderValidationResult {
+  /** 是否验证通过 */
+  valid: boolean;
+  /** 错误类型 */
+  errorType?: 'no_provider' | 'no_api_key' | 'invalid_api_key' | 'invalid_url';
+  /** 解密后的 API Key（验证通过时返回） */
+  decryptedApiKey?: string;
+}
+
+/**
+ * 验证提供方配置
+ * 统一验证 API Key 和 URL 的有效性
+ * @param provider - 提供方配置对象（需包含 apiKey、apiUrl、type）
+ * @returns 验证结果
+ */
+export async function validateProviderConfig(
+  provider: { apiKey?: string; apiUrl: string; type: ProviderType } | undefined
+): Promise<ProviderValidationResult> {
+  // 检查提供方是否存在
+  if (!provider) {
+    return { valid: false, errorType: 'no_provider' };
+  }
+
+  // 检查 API Key 是否存在
+  if (!provider.apiKey) {
+    return { valid: false, errorType: 'no_api_key' };
+  }
+
+  // 解密并验证 API Key
+  const decryptedApiKey = await deobfuscateApiKey(provider.apiKey);
+  if (!validateApiKey(decryptedApiKey)) {
+    return { valid: false, errorType: 'invalid_api_key' };
+  }
+
+  // 验证 API URL
+  if (!isValidApiUrl(provider.apiUrl, provider.type)) {
+    return { valid: false, errorType: 'invalid_url' };
+  }
+
+  return { valid: true, decryptedApiKey };
+}
+
+/**
+ * 获取验证错误的本地化消息
+ * @param errorType - 错误类型
+ * @param isZh - 是否为中文
+ * @returns 错误消息
+ */
+export function getProviderValidationErrorMessage(
+  errorType: ProviderValidationResult['errorType'],
+  isZh: boolean
+): string {
+  switch (errorType) {
+    case 'no_provider':
+      return isZh ? '提供方未配置' : 'Provider not configured';
+    case 'no_api_key':
+      return isZh ? 'API Key 未设置' : 'API Key not set';
+    case 'invalid_api_key':
+      return isZh ? 'API Key 格式无效，请检查设置' : 'Invalid API Key format';
+    case 'invalid_url':
+      return isZh ? 'API 地址无效，请检查设置' : 'Invalid API URL';
+    default:
+      return isZh ? '验证失败' : 'Validation failed';
+  }
+}

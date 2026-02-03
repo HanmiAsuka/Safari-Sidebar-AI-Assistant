@@ -5,7 +5,6 @@
 
 import type {
   ChatMessage,
-  ThinkingLevel,
   UserMessageContext,
   ProviderConfig,
   SummaryCallbacks
@@ -14,8 +13,7 @@ import { T, IS_ZH } from '@/i18n';
 import { CONFIG } from '@/config';
 import { sendIcon, stopIcon } from '@/ui';
 import * as Security from '../../utils/security';
-import { getShortModelName } from '@/utils';
-import { toggleSelectorOpen, closeSelectorDropdown, updateSelectorArrow } from '@/utils';
+import { closeSelectorDropdown } from '@/utils';
 import { ChatClient, parseErrorMessage } from '../chat-client';
 import { BaseView, ViewHost } from '@/core';
 import { SelectionManager, renderChips } from '@/core';
@@ -30,7 +28,6 @@ import {
   finishThinking,
   createSummaryBlock,
   updateSummaryContent,
-  finishSummary,
   showSummaryError,
   createContextDivider,
   createAbortedIndicator,
@@ -39,6 +36,7 @@ import {
   updateMarkdownContent,
   showNoResponseMessage
 } from '@/core';
+import { ScrollController, ModelSwitchController } from './helpers';
 
 /**
  * 对话视图扩展宿主接口
@@ -72,21 +70,12 @@ export class ChatView extends BaseView {
   private input!: HTMLTextAreaElement;
   private actionBtn!: HTMLButtonElement;
   private chipList!: HTMLElement;
-  private thinkSelector!: HTMLElement;
-  private thinkBtn!: HTMLElement;
-  private thinkPopup!: HTMLElement;
-  private thinkLevelDisplay!: HTMLElement;
-  private modelSwitchSelector!: HTMLElement;
-  private modelSwitchBtn!: HTMLElement;
-  private modelSwitchPopup!: HTMLElement;
-  private modelSwitchName!: HTMLElement;
 
   // 状态
   private selectionManager = new SelectionManager();
   private chatHistory: ChatMessage[] = [];
   private contextCutoffIndex = -1;
   private lastUserMessage: UserMessageContext | null = null;
-  private currentSessionModel: string | null = null;
   private isSummaryGenerating = false;
   private isActionLocked = false; // 防止连续点击
   private isAborted = false; // 标记当前生成流程是否被中止
@@ -97,13 +86,15 @@ export class ChatView extends BaseView {
   // 请求锁
   private requestLock: Promise<void> = Promise.resolve();
 
-  // 滚动节流
-  private scrollThrottle: ReturnType<typeof setTimeout> | null = null;
+  // 辅助控制器
+  private scrollController: ScrollController;
+  private modelSwitchController!: ModelSwitchController;
 
   constructor(host: ChatViewHost, container: HTMLElement) {
     super(host, container);
     this.host = host;
     this.chatClient = new ChatClient();
+    this.scrollController = new ScrollController();
   }
 
   /**
@@ -111,9 +102,22 @@ export class ChatView extends BaseView {
    */
   init(): void {
     this.cacheElements();
+    this.scrollController.setTarget(this.chatList);
+    this.initModelSwitchController();
     this.bindEvents();
-    this.updateThinkingLevelUI();
-    this.updateModelSwitchUI();
+  }
+
+  /**
+   * 初始化模型切换控制器
+   */
+  private initModelSwitchController(): void {
+    this.modelSwitchController = new ModelSwitchController({
+      shadow: this.host.shadow,
+      getSettings: () => this.host.settings,
+      saveSettings: (settings) => this.host.saveSettings(settings),
+      getAddedModels: () => this.host.addedModels
+    });
+    this.modelSwitchController.init();
   }
 
   /**
@@ -124,14 +128,6 @@ export class ChatView extends BaseView {
     this.input = this.host.shadow.getElementById('sa-input') as HTMLTextAreaElement;
     this.actionBtn = this.host.shadow.getElementById('sa-action-btn') as HTMLButtonElement;
     this.chipList = this.host.shadow.getElementById('sa-chip-list')!;
-    this.thinkSelector = this.host.shadow.getElementById('sa-think-selector')!;
-    this.thinkBtn = this.host.shadow.getElementById('sa-think-btn')!;
-    this.thinkPopup = this.host.shadow.getElementById('sa-think-popup')!;
-    this.thinkLevelDisplay = this.host.shadow.getElementById('sa-think-level')!;
-    this.modelSwitchSelector = this.host.shadow.getElementById('sa-model-switch-selector')!;
-    this.modelSwitchBtn = this.host.shadow.getElementById('sa-model-switch-btn')!;
-    this.modelSwitchPopup = this.host.shadow.getElementById('sa-model-switch-popup')!;
-    this.modelSwitchName = this.host.shadow.getElementById('sa-model-switch-name')!;
   }
 
   /**
@@ -153,29 +149,6 @@ export class ChatView extends BaseView {
 
     // 发送/停止按钮
     this.actionBtn.onclick = () => void this.handleAction();
-
-    // 模型切换按钮
-    this.modelSwitchBtn.onclick = (e) => {
-      e.stopPropagation();
-      toggleSelectorOpen(this.modelSwitchSelector, '.model-arrow');
-      this.renderModelSwitchPopup();
-    };
-
-    // 思考强度选择器
-    this.thinkBtn.onclick = (e) => {
-      e.stopPropagation();
-      toggleSelectorOpen(this.thinkSelector, '.think-arrow');
-    };
-
-    this.thinkPopup.querySelectorAll('.sa-think-option').forEach((opt) => {
-      (opt as HTMLElement).onclick = (e) => {
-        e.stopPropagation();
-        const level = (opt as HTMLElement).dataset.level as ThinkingLevel;
-        this.host.saveSettings({ thinkingLevel: level });
-        this.updateThinkingLevelUI();
-        closeSelectorDropdown(this.thinkSelector, '.think-arrow');
-      };
-    });
   }
 
   /**
@@ -271,111 +244,32 @@ export class ChatView extends BaseView {
    * 滚动到底部
    */
   private scrollToBottom(force = false): void {
-    if (this.scrollThrottle) {
-      clearTimeout(this.scrollThrottle);
-    }
-
-    this.scrollThrottle = setTimeout(() => {
-      try {
-        if (!this.chatList) return;
-
-        if (force) {
-          this.chatList.scrollTo({
-            top: this.chatList.scrollHeight,
-            behavior: 'instant'
-          });
-        } else {
-          const isNearBottom =
-            this.chatList.scrollHeight -
-              this.chatList.scrollTop -
-              this.chatList.clientHeight <=
-            CONFIG.SCROLL_BOTTOM_THRESHOLD;
-          if (isNearBottom) {
-            this.chatList.scrollTo({
-              top: this.chatList.scrollHeight,
-              behavior: 'smooth'
-            });
-          }
-        }
-      } catch (error) {
-        console.warn('Scroll error:', error);
-      }
-    }, CONFIG.SCROLL_THROTTLE_DELAY);
+    this.scrollController.scrollToBottom(force);
   }
 
   // ============================================
-  // 模型切换 UI
+  // 模型切换 UI（委托给控制器）
   // ============================================
 
   /**
    * 更新思考强度 UI
    */
   updateThinkingLevelUI(): void {
-    const level = this.host.settings.thinkingLevel || 'none';
-    this.thinkLevelDisplay.textContent = T.thinkingLevels[level];
-
-    if (level !== 'none') {
-      this.thinkBtn.classList.add('active');
-    } else {
-      this.thinkBtn.classList.remove('active');
-    }
-
-    // 确保箭头方向正确
-    updateSelectorArrow(this.thinkSelector, '.think-arrow');
-
-    this.thinkPopup.querySelectorAll('.sa-think-option').forEach((opt) => {
-      const optEl = opt as HTMLElement;
-      optEl.classList.toggle('selected', optEl.dataset.level === level);
-    });
+    this.modelSwitchController.updateThinkingLevelUI();
   }
 
   /**
    * 更新模型切换按钮 UI
    */
   updateModelSwitchUI(): void {
-    const currentModel = this.currentSessionModel || this.host.settings.chatModel;
-    this.modelSwitchName.textContent = getShortModelName(currentModel);
-    this.modelSwitchName.title = currentModel;
-
-    // 确保箭头方向正确
-    updateSelectorArrow(this.modelSwitchSelector, '.model-arrow');
-  }
-
-  /**
-   * 渲染模型切换弹出菜单
-   */
-  private renderModelSwitchPopup(): void {
-    const addedModels = this.host.addedModels;
-
-    if (addedModels.length === 0) {
-      this.modelSwitchPopup.innerHTML = `<div class="sa-model-dropdown-empty">${T.noModelsAdded}</div>`;
-      return;
-    }
-
-    const currentModel = this.currentSessionModel || this.host.settings.chatModel;
-    this.modelSwitchPopup.innerHTML = addedModels
-      .map(
-        (id) =>
-          `<div class="sa-model-switch-option ${id === currentModel ? 'selected' : ''}" data-model="${id}">${id}</div>`
-      )
-      .join('');
-
-    this.modelSwitchPopup.querySelectorAll('.sa-model-switch-option').forEach((item) => {
-      (item as HTMLElement).onclick = (e) => {
-        e.stopPropagation();
-        this.currentSessionModel = (item as HTMLElement).dataset.model!;
-        this.updateModelSwitchUI();
-        closeSelectorDropdown(this.modelSwitchSelector, '.model-arrow');
-      };
-    });
+    this.modelSwitchController.updateModelSwitchUI();
   }
 
   /**
    * 关闭所有下拉菜单
    */
   closeDropdowns(): void {
-    closeSelectorDropdown(this.thinkSelector, '.think-arrow');
-    closeSelectorDropdown(this.modelSwitchSelector, '.model-arrow');
+    this.modelSwitchController.closeDropdowns();
     this.host.shadow.querySelectorAll('.sa-msg-btn.open').forEach((btn) => {
       btn.classList.remove('open');
       const arrow = btn.querySelector('.sa-msg-btn-arrow');
@@ -474,43 +368,27 @@ export class ChatView extends BaseView {
 
       if (!rawInput && currentQueue.length === 0) return;
 
+      // 验证摘要提供方（如果需要摘要）
       const needsNewSummary = this.host.needsSummary() || !this.host.getCachedSummary();
       if (needsNewSummary) {
         const summaryProvider = this.host.getSummaryProvider();
-        if (!summaryProvider || !summaryProvider.apiKey) {
-          this.host.openSettings();
-          return;
-        }
-
-        const plainSummaryApiKey = await Security.deobfuscateApiKey(summaryProvider.apiKey);
-        if (!Security.validateApiKey(plainSummaryApiKey)) {
-          alert(IS_ZH ? '摘要 API Key 格式无效，请检查设置' : 'Invalid summary API Key format');
-          this.host.openSettings();
-          return;
-        }
-
-        if (!Security.isValidApiUrl(summaryProvider.apiUrl, summaryProvider.type)) {
-          alert(IS_ZH ? '摘要 API 地址无效，请检查设置' : 'Invalid summary API URL');
+        const summaryValidation = await Security.validateProviderConfig(summaryProvider);
+        if (!summaryValidation.valid) {
+          if (summaryValidation.errorType !== 'no_provider' && summaryValidation.errorType !== 'no_api_key') {
+            alert(Security.getProviderValidationErrorMessage(summaryValidation.errorType, IS_ZH));
+          }
           this.host.openSettings();
           return;
         }
       }
 
+      // 验证对话提供方
       const chatProvider = this.host.getChatProvider();
-      if (!chatProvider || !chatProvider.apiKey) {
-        this.host.openSettings();
-        return;
-      }
-
-      const plainApiKey = await Security.deobfuscateApiKey(chatProvider.apiKey);
-      if (!Security.validateApiKey(plainApiKey)) {
-        alert(IS_ZH ? 'API Key 格式无效，请检查设置' : 'Invalid API Key format');
-        this.host.openSettings();
-        return;
-      }
-
-      if (!Security.isValidApiUrl(chatProvider.apiUrl, chatProvider.type)) {
-        alert(IS_ZH ? 'API 地址无效，请检查设置' : 'Invalid API URL');
+      const chatValidation = await Security.validateProviderConfig(chatProvider);
+      if (!chatValidation.valid) {
+        if (chatValidation.errorType !== 'no_provider' && chatValidation.errorType !== 'no_api_key') {
+          alert(Security.getProviderValidationErrorMessage(chatValidation.errorType, IS_ZH));
+        }
         this.host.openSettings();
         return;
       }
@@ -581,7 +459,7 @@ export class ChatView extends BaseView {
 
     let aiBubble: HTMLElement | null = null;
     let messageDiv: HTMLElement | null = null;
-    const actualModel = useModel || this.currentSessionModel || this.host.settings.chatModel;
+    const actualModel = useModel || this.modelSwitchController.getCurrentModel();
 
     const provider = this.host.getChatProvider();
 
@@ -824,11 +702,7 @@ export class ChatView extends BaseView {
    */
   override destroy(): void {
     this.chatClient.destroy();
-
-    if (this.scrollThrottle) {
-      clearTimeout(this.scrollThrottle);
-      this.scrollThrottle = null;
-    }
+    this.scrollController.destroy();
 
     this.chatHistory = [];
     this.selectionManager.clear();

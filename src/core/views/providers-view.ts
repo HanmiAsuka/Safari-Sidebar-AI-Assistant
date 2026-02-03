@@ -45,6 +45,9 @@ export class ProvidersView extends BaseView {
   // DOM 元素
   private providersList!: HTMLElement;
 
+  // 事件处理器引用（用于移除监听器）
+  private boundDocumentClickHandler: (() => void) | null = null;
+
   constructor(host: ProvidersViewHost, container: HTMLElement) {
     super(host, container);
     this.host = host;
@@ -356,13 +359,35 @@ export class ProvidersView extends BaseView {
       }
     });
 
-    // 点击外部关闭下拉框
-    document.addEventListener('click', () => {
+    // 移除之前的监听器（如果存在）
+    this.removeDocumentClickHandler();
+
+    // 点击外部关闭下拉框（使用命名函数以便移除）
+    this.boundDocumentClickHandler = () => {
       this.providersList.querySelectorAll('.sa-selector-wrapper.open').forEach(wrapper => {
         wrapper.classList.remove('open');
         wrapper.querySelector('.sa-selector-arrow')!.textContent = '◀';
       });
-    });
+    };
+    document.addEventListener('click', this.boundDocumentClickHandler);
+  }
+
+  /**
+   * 移除文档点击事件监听器
+   */
+  private removeDocumentClickHandler(): void {
+    if (this.boundDocumentClickHandler) {
+      document.removeEventListener('click', this.boundDocumentClickHandler);
+      this.boundDocumentClickHandler = null;
+    }
+  }
+
+  /**
+   * 销毁视图，清理资源
+   */
+  override destroy(): void {
+    this.removeDocumentClickHandler();
+    super.destroy();
   }
 
   /**
