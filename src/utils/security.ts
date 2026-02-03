@@ -6,6 +6,7 @@
 import { IS_ZH } from '@/i18n';
 import { CONFIG } from '@/config';
 import type { ProviderType } from '@/types';
+import GMSafe from '@/core/gm-api';
 
 /** 缓存的加密密钥 */
 let cachedEncryptionKey: CryptoKey | null = null;
@@ -13,36 +14,42 @@ let cachedEncryptionKey: CryptoKey | null = null;
 /**
  * 生成或获取加密密钥
  * 使用 Web Crypto API 生成 AES-GCM 密钥
+ * 优先使用 GM API 存储以支持跨域名共享
  */
 async function getEncryptionKey(): Promise<CryptoKey> {
   if (cachedEncryptionKey) {
     return cachedEncryptionKey;
   }
 
-  // 尝试从 localStorage 获取已存储的密钥
-  const storedKey = localStorage.getItem(CONFIG.SECURITY.ENCRYPTION_KEY_STORAGE);
+  // 1. 尝试从存储获取已有的密钥
+  const storedKey = await GMSafe.getValue<string | null>(CONFIG.SECURITY.ENCRYPTION_KEY_STORAGE, null);
+
   if (storedKey) {
-    const keyData = JSON.parse(storedKey);
-    cachedEncryptionKey = await crypto.subtle.importKey(
-      'jwk',
-      keyData,
-      { name: 'AES-GCM', length: 256 },
-      true,
-      ['encrypt', 'decrypt']
-    );
-    return cachedEncryptionKey;
+    try {
+      const keyData = JSON.parse(storedKey);
+      cachedEncryptionKey = await crypto.subtle.importKey(
+        'jwk',
+        keyData,
+        { name: 'AES-GCM', length: 256 },
+        true,
+        ['encrypt', 'decrypt']
+      );
+      return cachedEncryptionKey;
+    } catch (e) {
+      console.error('Failed to import encryption key, generating new one', e);
+    }
   }
 
-  // 生成新密钥
+  // 2. 生成新密钥
   cachedEncryptionKey = await crypto.subtle.generateKey(
     { name: 'AES-GCM', length: 256 },
     true,
     ['encrypt', 'decrypt']
   );
 
-  // 导出并存储密钥
+  // 3. 导出并存储密钥
   const exportedKey = await crypto.subtle.exportKey('jwk', cachedEncryptionKey);
-  localStorage.setItem(CONFIG.SECURITY.ENCRYPTION_KEY_STORAGE, JSON.stringify(exportedKey));
+  await GMSafe.setValue(CONFIG.SECURITY.ENCRYPTION_KEY_STORAGE, JSON.stringify(exportedKey));
 
   return cachedEncryptionKey;
 }
@@ -97,12 +104,6 @@ export async function obfuscateApiKey(plainKey: string): Promise<string> {
  */
 export async function deobfuscateApiKey(encryptedKey: string): Promise<string> {
   if (!encryptedKey || typeof encryptedKey !== 'string') return '';
-
-  // 必须是 ENC 格式
-  if (!encryptedKey.startsWith('ENC:')) {
-    // 可能是旧版未加密的 key，直接返回（向后兼容）
-    return encryptedKey;
-  }
 
   const key = await getEncryptionKey();
 
@@ -194,8 +195,15 @@ export function clampNumber(value: unknown, min: number, max: number, defaultVal
  */
 export function validateApiKey(key: string): boolean {
   if (!key || typeof key !== 'string') return false;
-  // 基本格式验证：至少10个字符，只允许字母、数字、下划线、点和横线
-  return key.length >= 10 && /^[a-zA-Z0-9_.-]+$/.test(key) && key.length <= 200;
+
+  // 如果是已加密的 Key，验证其基本结构
+  if (key.startsWith('ENC:')) {
+    const parts = key.split(':');
+    return parts.length === 3 && parts[1].length > 0 && parts[2].length > 0;
+  }
+
+  // 明文 API Key 验证：至少 8 个字符（部分提供商如 DeepSeek 较短），允许常见 API Key 字符
+  return key.length >= 8 && /^[a-zA-Z0-9_.-]+$/.test(key) && key.length <= 500;
 }
 
 /**
@@ -410,7 +418,8 @@ export async function validateProviderConfig(
 
   // 解密并验证 API Key
   const decryptedApiKey = await deobfuscateApiKey(provider.apiKey);
-  if (!validateApiKey(decryptedApiKey)) {
+  // 验证解密后的明文格式
+  if (!decryptedApiKey || !/^[a-zA-Z0-9_.-]{8,500}$/.test(decryptedApiKey)) {
     return { valid: false, errorType: 'invalid_api_key' };
   }
 
