@@ -1,0 +1,27 @@
+{
+  "name": "safari-ai-assistant",
+  "version": "1.0.0",
+  "description": "浏览器侧边栏 AI 助手",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "userscript",
+    "safari",
+    "ai",
+    "assistant",
+    "sidebar"
+  ],
+  "author": "HanmiAsuka",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^25.2.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "vite-plugin-monkey": "^7.1.9"
+  }
+}
