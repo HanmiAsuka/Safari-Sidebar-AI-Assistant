@@ -141,10 +141,11 @@ export const toolbarStyles = `
   }
 
   .sa-toolbar-btn {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 6px 10px;
+    height: 32px;
     border-radius: var(--radius-full);
     background: var(--chip-bg);
     border: 1px solid var(--chip-border);
@@ -154,6 +155,8 @@ export const toolbarStyles = `
     color: var(--text-secondary);
     transition: all 0.15s;
     gap: 5px;
+    flex-shrink: 0;
+    white-space: nowrap;
   }
 
   .sa-toolbar-btn:hover {

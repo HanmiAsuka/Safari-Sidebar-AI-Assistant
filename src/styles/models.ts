@@ -319,13 +319,15 @@ export const modelSwitchStyles = `
     position: relative;
     display: inline-flex;
     max-width: 120px;
+    flex-shrink: 0;
   }
 
   .sa-model-switch-btn {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 6px;
     padding: 6px 10px;
+    height: 32px;
     border-radius: var(--radius-full);
     background: var(--chip-bg);
     border: 1px solid var(--chip-border);
@@ -336,6 +338,7 @@ export const modelSwitchStyles = `
     transition: all 0.15s;
     max-width: 120px;
     min-width: 0;
+    flex-shrink: 0;
   }
 
   .sa-model-switch-btn:hover {

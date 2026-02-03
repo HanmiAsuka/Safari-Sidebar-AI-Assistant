@@ -6,7 +6,25 @@ import { sidebarWidth } from './variables';
 
 /** 基础重置和容器样式 */
 export const baseStyles = `
-  * { box-sizing: border-box; }
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* 继承属性重置，防止宿主页面样式泄漏 */
+  #sa-sidebar, #sa-sidebar * {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  #sa-sidebar button {
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+  }
 
   #sa-sidebar {
     position: fixed;

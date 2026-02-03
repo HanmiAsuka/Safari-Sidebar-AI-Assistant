@@ -6,13 +6,15 @@ export const thinkSelectorStyles = `
   .sa-think-selector {
     position: relative;
     display: inline-flex;
+    flex-shrink: 0;
   }
 
   .sa-think-btn {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 6px;
     padding: 6px 12px;
+    height: 32px;
     border-radius: var(--radius-full);
     background: var(--chip-bg);
     border: 1px solid var(--chip-border);
@@ -22,6 +24,8 @@ export const thinkSelectorStyles = `
     color: var(--text-secondary);
     transition: all 0.15s;
     font-weight: 500;
+    flex-shrink: 0;
+    white-space: nowrap;
   }
 
   .sa-think-btn:hover {
