@@ -6,7 +6,7 @@
 import { T } from '@/i18n';
 import { parseMarkdown } from '@/core';
 import * as Security from '../../utils/security';
-import { summaryIcon, thinkIcon } from '@/ui';
+import { summaryIcon, thinkIcon, errorIcon } from '@/ui';
 
 /**
  * 添加用户消息到聊天列表
@@ -427,4 +427,62 @@ export function showNoResponseMessage(bubble: HTMLElement): void {
   span.textContent = T.noResponse + '.';
   bubble.innerHTML = '';
   bubble.appendChild(span);
+}
+
+/**
+ * 显示摘要错误状态
+ * @param parent - 气泡元素
+ * @param errorMessage - 错误信息
+ */
+export function showSummaryError(parent: HTMLElement, errorMessage: string): void {
+  let block = parent.querySelector('.sa-summary-block');
+
+  // 如果不存在摘要块，先创建一个
+  if (!block) {
+    createSummaryBlock(parent, false);
+    block = parent.querySelector('.sa-summary-block');
+  }
+
+  if (!block) return;
+
+  // 移除加载状态，添加错误状态
+  block.classList.remove('loading');
+  block.classList.add('error');
+
+  // 更新图标为错误图标
+  const iconSpan = block.querySelector('.sa-summary-icon');
+  if (iconSpan) {
+    iconSpan.innerHTML = errorIcon;
+  }
+
+  // 更新标题
+  const titleSpan = block.querySelector('.sa-summary-title');
+  if (titleSpan) {
+    titleSpan.textContent = T.summaryFailed;
+  }
+
+  // 移除加载状态指示器
+  const statusSpan = block.querySelector('.sa-summary-status');
+  if (statusSpan) statusSpan.remove();
+
+  // 添加错误状态指示器
+  const header = block.querySelector('.sa-summary-header');
+  const arrow = header?.querySelector('.sa-summary-arrow');
+  if (header && arrow && !header.querySelector('.sa-summary-error-status')) {
+    const errorStatus = document.createElement('span');
+    errorStatus.className = 'sa-summary-error-status';
+    errorStatus.textContent = T.clickToViewSummary;
+    header.insertBefore(errorStatus, arrow);
+  }
+
+  // 更新内容区域显示错误信息
+  let contentDiv = block.querySelector('.sa-summary-content') as HTMLElement;
+  if (!contentDiv) {
+    contentDiv = document.createElement('div');
+    contentDiv.className = 'sa-summary-content sa-summary-error-content';
+    block.appendChild(contentDiv);
+  } else {
+    contentDiv.classList.add('sa-summary-error-content');
+  }
+  contentDiv.textContent = T.summaryErrorPrefix + errorMessage;
 }

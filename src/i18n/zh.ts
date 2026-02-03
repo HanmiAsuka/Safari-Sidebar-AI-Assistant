@@ -131,6 +131,8 @@ export const zh: I18NText = {
   summaryPrompt: '摘要提示词',
   summarizing: 'AI 正在生成网页摘要',
   summaryComplete: '摘要完成',
+  summaryFailed: '摘要生成失败',
+  summaryErrorPrefix: '错误原因：',
   pageSummary: '页面摘要',
   clickToViewSummary: '点击查看摘要内容',
   errors: {

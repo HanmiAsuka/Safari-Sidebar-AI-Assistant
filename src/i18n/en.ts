@@ -131,6 +131,8 @@ Note: For code repositories (like GitHub), only describe project name, brief des
   summaryPrompt: 'Summary Prompt',
   summarizing: 'AI is generating page summary',
   summaryComplete: 'Summary complete',
+  summaryFailed: 'Summary generation failed',
+  summaryErrorPrefix: 'Error: ',
   pageSummary: 'Page Summary',
   clickToViewSummary: 'Click to view summary',
   errors: {

@@ -179,6 +179,10 @@ export interface I18NText {
   summarizing: string;
   /** 摘要完成 */
   summaryComplete: string;
+  /** 摘要失败 */
+  summaryFailed: string;
+  /** 摘要错误前缀 */
+  summaryErrorPrefix: string;
   /** 页面摘要 */
   pageSummary: string;
   /** 点击查看摘要 */

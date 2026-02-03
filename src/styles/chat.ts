@@ -347,4 +347,50 @@ export const summaryBlockStyles = `
     display: block;
     animation: slideDown 0.25s ease-out;
   }
+
+  /* 摘要失败状态 */
+  .sa-summary-block.error {
+    border-color: var(--danger-color);
+    background: rgba(239, 68, 68, 0.05);
+  }
+
+  .sa-summary-block.error .sa-summary-header {
+    background: rgba(239, 68, 68, 0.08);
+  }
+
+  .sa-summary-block.error .sa-summary-header:hover {
+    background: rgba(239, 68, 68, 0.12);
+  }
+
+  .sa-summary-block.error .sa-summary-icon {
+    color: var(--danger-color);
+  }
+
+  .sa-summary-block.error .sa-summary-title {
+    color: var(--danger-color);
+  }
+
+  .sa-summary-error-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--danger-color);
+    padding-right: 8px;
+  }
+
+  .sa-summary-error-content {
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--danger-color);
+    border-top: 1px solid rgba(239, 68, 68, 0.2);
+    display: none;
+    line-height: 1.6;
+    background: rgba(239, 68, 68, 0.03);
+  }
+
+  .sa-summary-error-content.visible {
+    display: block;
+    animation: slideDown 0.25s ease-out;
+  }
 `;

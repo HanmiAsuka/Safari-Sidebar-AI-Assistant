@@ -31,6 +31,7 @@ import {
   createSummaryBlock,
   updateSummaryContent,
   finishSummary,
+  showSummaryError,
   createContextDivider,
   createAbortedIndicator,
   createErrorElement,
@@ -473,20 +474,42 @@ export class ChatView extends BaseView {
 
       if (!rawInput && currentQueue.length === 0) return;
 
-      const provider = this.host.getChatProvider();
-      if (!provider || !provider.apiKey) {
+      const needsNewSummary = this.host.needsSummary() || !this.host.getCachedSummary();
+      if (needsNewSummary) {
+        const summaryProvider = this.host.getSummaryProvider();
+        if (!summaryProvider || !summaryProvider.apiKey) {
+          this.host.openSettings();
+          return;
+        }
+
+        const plainSummaryApiKey = await Security.deobfuscateApiKey(summaryProvider.apiKey);
+        if (!Security.validateApiKey(plainSummaryApiKey)) {
+          alert(IS_ZH ? '摘要 API Key 格式无效，请检查设置' : 'Invalid summary API Key format');
+          this.host.openSettings();
+          return;
+        }
+
+        if (!Security.isValidApiUrl(summaryProvider.apiUrl, summaryProvider.type)) {
+          alert(IS_ZH ? '摘要 API 地址无效，请检查设置' : 'Invalid summary API URL');
+          this.host.openSettings();
+          return;
+        }
+      }
+
+      const chatProvider = this.host.getChatProvider();
+      if (!chatProvider || !chatProvider.apiKey) {
         this.host.openSettings();
         return;
       }
 
-      const plainApiKey = await Security.deobfuscateApiKey(provider.apiKey);
+      const plainApiKey = await Security.deobfuscateApiKey(chatProvider.apiKey);
       if (!Security.validateApiKey(plainApiKey)) {
         alert(IS_ZH ? 'API Key 格式无效，请检查设置' : 'Invalid API Key format');
         this.host.openSettings();
         return;
       }
 
-      if (!Security.isValidApiUrl(provider.apiUrl, provider.type)) {
+      if (!Security.isValidApiUrl(chatProvider.apiUrl, chatProvider.type)) {
         alert(IS_ZH ? 'API 地址无效，请检查设置' : 'Invalid API URL');
         this.host.openSettings();
         return;
@@ -614,7 +637,7 @@ export class ChatView extends BaseView {
               },
               onError: (error) => {
                 console.error('Summary generation error:', error);
-                finishSummary(aiBubble!);
+                showSummaryError(aiBubble!, error);
                 this.isSummaryGenerating = false;
               }
             });
@@ -626,7 +649,8 @@ export class ChatView extends BaseView {
             }
           } catch (error) {
             console.error('Summary error:', error);
-            finishSummary(aiBubble);
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            showSummaryError(aiBubble, errorMsg);
             pageContextContent = `[Page Content]:\n${Security.smartTruncateContent(document.body.innerText, CONFIG.MAX_PAGE_CONTENT_LENGTH)}`;
           }
 
