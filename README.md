@@ -13,7 +13,9 @@
 - **网页摘要**：自动生成当前页面的智能摘要，为对话提供背景信息。
 - **智能选文**：支持多段文本选中，按住 `x` 键即可连续采集网页片段。
 - **深度思考**：支持模型的思考过程显示，提供可选的推理强度。
-- **浏览器适配**：浏览器需安装支持加载用户脚本的插件，如 Safari 的 [quoid/userscripts](https://github.com/quoid/userscripts) （我本地的环境是这样），其他浏览器用 Tampermonkey/游猴 加载（尚需测试）。
+- **浏览器适配**：浏览器需安装支持加载用户脚本的插件 
+    - **Safari**: 用 [quoid/userscripts](https://github.com/quoid/userscripts) 加载（我本地的环境是这样）
+    - 其他浏览器: 用 Tampermonkey/游猴 加载（尚需测试）。
 
 ## 安装
 
