@@ -2,37 +2,39 @@
 
 [中文](README.md) | English
 
-A Safari browser sidebar AI assistant that supports OpenAI-compatible model providers (such as OpenRouter, AIHubMix), featuring web page summarization and selected text explanation.
+A lightweight AI assistant for the Safari sidebar, supporting OpenAI-compatible model providers (such as OpenRouter, AIHubMix). Features include web page summarization, selected text explanation, and more.
+
+<img width="1440" height="900" alt="image" src="https://github.com/user-attachments/assets/565a2f9f-6d03-4c74-b0fb-a88c1203a9a9" />
 
 ## Features
 
-- **Sidebar Design**: Non-intrusive to web browsing. Toggle visibility via the `Ctrl+x` (macOS) shortcut.
-- **Web Page Summarization**: Automatically generates smart summaries of the current page to provide context for conversations.
-- **Smart Text Selection**: Supports multi-segment text selection. Hold the `x` key to continuously collect web page snippets.
-- **Deep Thinking**: Supports displaying the model's reasoning process (Chain of Thought) with optional reasoning intensity.
-- **Browser Compatibility**: Requires a userscript manager. Developed and tested on Safari using quoid/userscripts [quoid/userscripts](https://github.com/quoid/userscripts). It may also work on Chrome with Tampermonkey.
+- **Sidebar Design**: Non-intrusive browsing experience. Toggle the sidebar visibility with `Ctrl+x` (macOS).
+- **Web Summarization**: Automatically generates intelligent summaries of the current page to provide context for your conversations.
+- **Smart Selection**: Supports multi-segment text selection. Hold the `x` key to continuously capture text fragments from the webpage.
+- **Deep Thinking**: Supports the display of the model's thinking process, offering optional reasoning intensity settings.
+- **Browser Compatibility**: Requires a user script manager. Currently tested on Safari with [quoid/userscripts](https://github.com/quoid/userscripts). (Chrome via Tampermonkey may work but is currently untested).
 
 ## Installation
 
-1. Install a browser extension (macOS: quoid/userscripts [quoid/userscripts](https://github.com/quoid/userscripts)).
-2. Get the user script installation via GitHub Releases.
+1. Install a browser extension manager (macOS: [quoid/userscripts](https://github.com/quoid/userscripts)).
+2. Install the userscript via GitHub Releases.
 
-## User Guide
+## Usage Guide
 
 ### Shortcuts
 
-- **Ctrl + x**: Quickly toggle the sidebar.
-- **Long press `x`**: Enter multi-segment collection mode. While holding the key, selected text on the webpage will be automatically added to the pending queue.
+- **Ctrl + x**: Quickly show/hide the sidebar.
+- **Hold 'x' key**: Enter multi-segment collection mode. While holding, selected text on the webpage is automatically added to the pending send queue.
 
 ### Basic Configuration
 
 1. Open the sidebar and click the **Settings** icon at the top.
-2. Click the management button next to **Model Provider** under Chat Model Settings to enter **Provider Management**. Select your AI service provider and enter your API Key.
-3. Select your desired Chat Model and Summary Model (optional) in the settings.
+2. In the **Chat Model Settings**, click the management button next to **Model Provider** to enter the **Provider Management** page. Select your AI service provider and enter your API Key.
+3. Return to the **Settings** page to select your preferred Chat Model and Summary Model (optional).
 
-### Web Page Summarization
+### Web Summarization
 
-When the summary feature is enabled, the assistant automatically analyzes the core content of the current page. During conversations, these summaries are provided to the AI as background context, enabling it to better understand the page you are viewing.
+When the summary function is enabled, the assistant automatically analyzes the core content of the current page. During conversations, these summaries are provided to the AI as background context, enabling it to better understand the page you are viewing.
 
 ## Development
 
