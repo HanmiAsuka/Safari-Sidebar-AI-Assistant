@@ -52,7 +52,7 @@ export function addMessageFooter(
   modelBtn.onclick = (e) => {
     e.stopPropagation();
     const isOpen = modelBtn.classList.toggle('open');
-    modelBtn.querySelector('.sa-msg-btn-arrow')!.textContent = isOpen ? '▼' : '◀';
+    modelBtn.querySelector('.sa-msg-btn-arrow')!.textContent = isOpen ? '▲' : '◀';
     if (isOpen) {
       renderModelPopup(popup, modelBtn, messageDiv, addedModels, onRegenerate);
     }

@@ -6,7 +6,7 @@
 import type { ThinkingLevel, Settings } from '@/types';
 import { T } from '@/i18n';
 import { getShortModelName } from '@/utils';
-import { toggleSelectorOpen, closeSelectorDropdown, updateSelectorArrow } from '@/utils';
+import { togglePopupOpen, closeSelectorDropdown, updatePopupArrow } from '@/utils';
 
 /**
  * 模型切换选项
@@ -77,14 +77,14 @@ export class ModelSwitchController {
     // 模型切换按钮
     this.modelSwitchBtn.onclick = (e) => {
       e.stopPropagation();
-      toggleSelectorOpen(this.modelSwitchSelector, '.model-arrow');
+      togglePopupOpen(this.modelSwitchSelector, '.model-arrow');
       this.renderModelSwitchPopup();
     };
 
     // 思考强度选择器
     this.thinkBtn.onclick = (e) => {
       e.stopPropagation();
-      toggleSelectorOpen(this.thinkSelector, '.think-arrow');
+      togglePopupOpen(this.thinkSelector, '.think-arrow');
     };
 
     this.thinkPopup.querySelectorAll('.sa-think-option').forEach((opt) => {
@@ -126,7 +126,7 @@ export class ModelSwitchController {
       this.thinkBtn.classList.remove('active');
     }
 
-    updateSelectorArrow(this.thinkSelector, '.think-arrow');
+    updatePopupArrow(this.thinkSelector, '.think-arrow');
 
     this.thinkPopup.querySelectorAll('.sa-think-option').forEach((opt) => {
       const optEl = opt as HTMLElement;
@@ -142,7 +142,7 @@ export class ModelSwitchController {
     this.modelSwitchName.textContent = getShortModelName(currentModel);
     this.modelSwitchName.title = currentModel;
 
-    updateSelectorArrow(this.modelSwitchSelector, '.model-arrow');
+    updatePopupArrow(this.modelSwitchSelector, '.model-arrow');
   }
 
   /**
